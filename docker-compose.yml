@@ -1,0 +1,37 @@
+services:
+  # Sample JMX target application (for testing)
+  jmx-target:
+    build:
+      context: ./jmx-target
+    container_name: jmx-target
+    expose:
+      - "9999"
+    networks:
+      - jmx-network
+
+  # Jolokia proxy that connects to JMX targets
+  jolokia:
+    build:
+      context: ./jolokia
+    container_name: jolokia-proxy
+    ports:
+      - "8080:8080"
+    networks:
+      - jmx-network
+    depends_on:
+      - jmx-target
+
+  # Telegraf collecting metrics via Jolokia proxy
+  telegraf:
+    image: telegraf:latest
+    container_name: telegraf
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    networks:
+      - jmx-network
+    depends_on:
+      - jolokia
+
+networks:
+  jmx-network:
+    driver: bridge
